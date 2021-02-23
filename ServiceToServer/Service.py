@@ -24,7 +24,7 @@ def publish_loop(client):
     print("Publish loop")
     while True:
         client.publish("vmk/team_4/r", json.dumps(publish()))
-        time.sleep(5)
+        time.sleep(30)
 
 
 def alert_loop():

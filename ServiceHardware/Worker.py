@@ -69,7 +69,7 @@ app = Flask(__name__)
 @app.route('/', methods=['POST'])
 def hello_world():
     import datetime
-    return json.dumps([get_light(datetime.datetime.now())])
+    return json.dumps([get_light(datetime.datetime.now()), get_humidity()])
 
 
 def signals():
