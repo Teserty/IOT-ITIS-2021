@@ -128,18 +128,22 @@ button = Button(6)
 a = False
 def u(client):
    while True:
-        if button.is_pressed:
+        print(button.is_pressed)
+        if button.is_pressed and not a:
+        
+            a = True
             client.publish(topic1, json.dumps(get_light()))
-            time.sleep(1)
+        else:
+            a = False
 import threading
 def run():
-    #client = connect_mqtt(worker_id)
-    #subscribe(client)
+    client = connect_mqtt(worker_id)
+    subscribe(client)
     client = connect_mqtt(client_id)
     client.loop_start()
-    th = threading.Thread(target=publish, args=[client])
+    th = threading.Thread(target=u, args=[client])
     th.start()
-    u(client)
+    publish(client)
 
 
 if __name__ == '__main__':
