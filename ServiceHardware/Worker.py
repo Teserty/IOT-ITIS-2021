@@ -5,12 +5,10 @@ import json
 from paho.mqtt import client as mqtt_client
 import json
 
-broker = 'broker.emqx.io'
-broker1 = 'broker.emqx.io.worker'
-broker2 = 'broker.emqx.io.service'
+broker = 'broker.hivemq.com'
 port = 1883
-topic1 = "/python/mqtt/sensors"
-topic2 = "/python/mqtt/commands"
+topic1 = "vmk/team_4"
+topic2 = "vmk/team_4/commands"
 # generate client ID with pub prefix randomly
 client_id = f'python-mqtt-0'
 worker_id = f'python-mqtt-1'
@@ -30,13 +28,13 @@ def get_humidity():
 
 def get_light_status():
     value = False
-    x = {"sensorID": "2", "typeSensor": "temperature", "typeValue": "boolean", "value": value}
+    x = {"sensorID": "2", "typeSensor": "light_status", "typeValue": "boolean", "value": value}
     return x
 
 
 def get_pomp_status():
     value = False
-    x = {"sensorID": "3", "typeSensor": "temperature", "typeValue": "boolean", "value": value}
+    x = {"sensorID": "3", "typeSensor": "pomp_status", "typeValue": "boolean", "value": value}
     return x
 
 
@@ -82,8 +80,9 @@ def subscribe(client: mqtt_client):
     client.subscribe(topic2)
     client.on_message = on_message
 
-
+import threading
 def run():
+    threading.Thread()
     client = connect_mqtt(worker_id)
     subscribe(client)
     client = connect_mqtt(client_id)

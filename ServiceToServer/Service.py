@@ -6,12 +6,10 @@ import json
 
 from paho.mqtt import client as mqtt_client
 
-broker = 'broker.emqx.io'
-broker1 = 'broker.emqx.io.worker'
-broker2 = 'broker.emqx.io.service'
+broker = 'broker.hivemq.com'
 port = 1883
-topic1 = "/python/mqtt/sensors"
-topic2 = "/python/mqtt/commands"
+topic1 = "vmk/team_4"
+topic2 = "vmk/team_4/commands"
 # generate client ID with pub prefix randomly
 client_id = f'python-mqtt-0'
 worker_id = f'python-mqtt-1'
