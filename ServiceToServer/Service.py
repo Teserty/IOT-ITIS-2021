@@ -1,25 +1,22 @@
-import random
-import random
+import requests as rq
+from flask import Flask, url_for
+from markupsafe import escape
+import threading
 import time
 import json
-
-
 from paho.mqtt import client as mqtt_client
 
-broker = 'broker.emqx.io'
-broker1 = 'broker.emqx.io.worker'
-broker2 = 'broker.emqx.io.service'
+broker = 'broker.hivemq.com'
 port = 1883
-topic1 = "/python/mqtt/sensors"
-topic2 = "/python/mqtt/commands"
+topic1 = "vmk/team_4"
+topic2 = "vmk/team_4/commands"
 # generate client ID with pub prefix randomly
 client_id = f'python-mqtt-0'
 worker_id = f'python-mqtt-1'
 # username = 'emqx'
 # password = 'public'
 
-
-def connect_mqtt(id) -> mqtt_client:
+def connect_mqtt(id):
     def on_connect(client, userdata, flags, rc):
         if rc == 0:
             print("Connected to MQTT Broker!")
@@ -33,27 +30,47 @@ def connect_mqtt(id) -> mqtt_client:
     return client
 
 
-def on_message(client, userdata, msg):
-    print(f"Received `{msg.payload.decode()}` from `{msg.topic}` topic")
-
-
-def subscribe(client: mqtt_client):
-    client.subscribe(topic1)
-    client.on_message = on_message
+sensors_per=[]
 
 
 def publish(client):
-    return 0
+    while True:
+        time.sleep(5)
+        for sensor in sensors_per:
+            result = client.publish(topic1, json.dumps(sensor))
+            status = result[0]
 
 
+def subscribe(client):
+    def on_message(client, userdata, msg):
+        print(msg.payload)
 
+    client.subscribe(topic2)
+    client.on_message = on_message
+
+
+import threading
 def run():
-    client = connect_mqtt('0')
+    #client = connect_mqtt(worker_id)
+    #subscribe(client)
+    client = connect_mqtt(client_id)
     client.loop_start()
-    client = connect_mqtt('2')
-    subscribe(client)
-    client.loop_forever()
+    th = threading.Thread(target=publish, args=[client])
+    th.start()
+    u(client)
 
 
-if __name__ == '__main__':
-    run()
+app = Flask(__name__)
+
+from flask import request, jsonify
+
+
+@app.route('/', methods = ['POST'])
+def hello_world():
+    sensors_per = request.form
+
+
+if __name__ == "__main__":
+    publisher = threading.Thread(target=publish)
+    publisher.start()
+    app.run()

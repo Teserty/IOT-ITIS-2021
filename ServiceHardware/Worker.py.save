@@ -1,12 +1,5 @@
 import smbus
-import requests
-from flask import Flask, url_for
-from markupsafe import escape
-import threading
 import time
-import json
-from paho.mqtt import client as mqtt_client
-
 
 # Define some constants from the datasheet
 
@@ -48,6 +41,12 @@ def readLight(addr=DEVICE):
   return convertToNumber(data)
 
 
+import random
+import time
+import json
+
+from paho.mqtt import client as mqtt_client
+import json
 
 broker = 'broker.hivemq.com'
 port = 1883
@@ -95,34 +94,57 @@ sensors_req = [get_light_status(), get_pomp_status()]
 controllers = [set_light(), set_pomp()]
 
 
+def connect_mqtt(id):
+    def on_connect(client, userdata, flags, rc):
+        if rc == 0:
+            print("Connected to MQTT Broker!")
+        else:
+            print("Failed to connect, return code %d\n", rc)
+
+    client = mqtt_client.Client(id)
+    # client.username_pw_set(username, password)
+    client.on_connect = on_connect
+    client.connect(broker, port)
+    return client
+
+
+def publish(client):
+    while True:
+        time.sleep(5)
+        for sensor in sensors_per:
+            result = client.publish(topic1, json.dumps(sensor))
+            status = result[0]
+
+
+def subscribe(client):
+    def on_message(client, userdata, msg):
+        print(msg.payload)
+
+    client.subscribe(topic2)
+    client.on_message = on_message
+
 from gpiozero import Button
 button = Button(6)
 a = False
 def u(client):
    while True:
-        if button.is_pressed:
+        print(button.is_pressed)
+        if button.is_pressed and not a:
+        
+            a = True
             client.publish(topic1, json.dumps(get_light()))
-            time.sleep(1)
+        else:
+            a = False
+import threading
+def run():
+    client = connect_mqtt(worker_id)
+    subscribe(client)
+    client = connect_mqtt(client_id)
+    client.loop_start()
+    th = threading.Thread(target=u, args=[client])
+    th.start()
+    publish(client)
 
 
-
-def publish():
-    while True:
-        time.sleep(5)
-        requests.post("localhost:5001", json.dumps(sensors_per))
-
-
-
-app = Flask(__name__)
-
-
-@app.route('/')
-def hello_world():
-    publish()
-
-
-if __name__ == "__main__":
-    publisher = threading.Thread(target=publish)
-    publisher.start()
-    app.run()
-
+if __name__ == '__main__':
+    run()

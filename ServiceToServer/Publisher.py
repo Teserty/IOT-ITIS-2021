@@ -4,9 +4,9 @@ import time
 from paho.mqtt import client as mqtt_client
 import json
 
-broker = 'broker.emqx.io'
+broker = 'broker.hivemq.com'
 port = 1883
-topic = "/python/mqtt"
+topic = "vmk/team_4"
 # generate client ID with pub prefix randomly
 client_id = f'python-mqtt-{random.randint(0, 1000)}'
 # username = 'emqx'
