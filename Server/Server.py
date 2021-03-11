@@ -34,7 +34,9 @@ def connect_mqtt(id, broker) -> mqtt_client:
             print("Failed to connect, return code %d\n", rc)
 
     client = mqtt_client.Client(id)
-    client.username_pw_set(ACCESS_TOKEN)
+    if id = '0':
+    	client.username_pw_set(ACCESS_TOKEN)
+
     client.on_connect = on_connect
     client.connect(broker, port)
     return client
