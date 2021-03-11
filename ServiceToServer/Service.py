@@ -16,6 +16,7 @@ worker_id = f'python-mqtt-1'
 # username = 'emqx'
 # password = 'public'
 
+
 def connect_mqtt(id):
     def on_connect(client, userdata, flags, rc):
         if rc == 0:
@@ -37,8 +38,8 @@ def publish(client):
     while True:
         time.sleep(5)
         for sensor in sensors_per:
-            result = client.publish(topic1, json.dumps(sensor))
-            status = result[0]
+            client.publish(topic1, json.dumps(sensor))
+
 
 
 def subscribe(client):
@@ -50,14 +51,15 @@ def subscribe(client):
 
 
 import threading
+
+
 def run():
-    #client = connect_mqtt(worker_id)
-    #subscribe(client)
+    client = connect_mqtt(worker_id)
+    subscribe(client)
     client = connect_mqtt(client_id)
     client.loop_start()
     th = threading.Thread(target=publish, args=[client])
     th.start()
-    u(client)
 
 
 app = Flask(__name__)
@@ -70,7 +72,7 @@ def hello_world():
     sensors_per = request.form
 
 
-if __name__ == "__main__":
+def exec():
     publisher = threading.Thread(target=publish)
     publisher.start()
     app.run()

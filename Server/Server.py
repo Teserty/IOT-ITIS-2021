@@ -53,5 +53,5 @@ def run():
     client.loop_forever()
 
 
-if __name__ == '__main__':
+def exec():
     run()

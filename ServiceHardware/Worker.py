@@ -121,7 +121,7 @@ def hello_world():
     publish()
 
 
-if __name__ == "__main__":
+def exec():
     publisher = threading.Thread(target=publish)
     publisher.start()
     app.run()
