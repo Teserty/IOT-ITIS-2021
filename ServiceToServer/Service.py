@@ -37,8 +37,7 @@ sensors_per=[]
 def publish(client):
     while True:
         time.sleep(5)
-        for sensor in sensors_per:
-            client.publish(topic1, json.dumps(sensor))
+        result = client.publish(topic1, json.dumps(sensors_per))
 
 
 
@@ -67,11 +66,19 @@ app = Flask(__name__)
 from flask import request, jsonify
 
 
-@app.route('/', methods = ['POST'])
+@app.route('/', methods=['POST'])
 def hello_world():
-    sensors_per = request.form
+    from ast import literal_eval
+    import json
+    data = literal_eval(request.data.decode('utf8'))
+    global sensors_per
+    sensors_per = data
+    #print(data)
+    #s = json.dumps(data, indent=4, sort_keys=True)
+    #print(s)
+    return "200"
 
 
 def exec():
     run()
-    app.run()
+    app.run(port=5001)

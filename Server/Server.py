@@ -16,8 +16,17 @@ worker_id = f'python-mqtt-1'
 # username = 'emqx'
 # password = 'public'
 
+brokerT = 'thingsboard.cloud'
+topicTelemetry = 'v1/devices/me/telemetry'
+topicRequest = 'v1/devices/me/rpc/request/'
+topicResponse = 'v1/devices/me/rpc/response/'
+topicRequest = "v1/devices/me/rpc/request/+"
+# generate client ID with pub prefix randomly
+# username = 'emqx'
+# password = 'public'
+ACCESS_TOKEN = 'Hj0payDBaIzqWowpoj0U'
 
-def connect_mqtt(id) -> mqtt_client:
+def connect_mqtt(id, broker) -> mqtt_client:
     def on_connect(client, userdata, flags, rc):
         if rc == 0:
             print("Connected to MQTT Broker!")
@@ -25,13 +34,22 @@ def connect_mqtt(id) -> mqtt_client:
             print("Failed to connect, return code %d\n", rc)
 
     client = mqtt_client.Client(id)
-    # client.username_pw_set(username, password)
+    client.username_pw_set(ACCESS_TOKEN)
     client.on_connect = on_connect
     client.connect(broker, port)
     return client
 
 
+sensors_per = []
+
+
 def on_message(client, userdata, msg):
+    from ast import literal_eval
+    import json
+    data = literal_eval(msg.payload.decode('utf8'))
+    global sensors_per
+    sensors_per = data
+    print(sensors_per)
     print(f"Received `{msg.payload.decode()}` from `{msg.topic}` topic")
 
 
@@ -41,14 +59,21 @@ def subscribe(client: mqtt_client):
 
 
 def publish(client):
-    return 0
+    while True:
+        print(sensors_per)
+        time.sleep(5)
+        for sensor in sensors_per:
+            result = client.publish(topicRequest, json.dumps(sensor))
 
 
 
 def run():
-    client = connect_mqtt('0')
+    import threading
+    client = connect_mqtt('0', brokerT)
     client.loop_start()
-    client = connect_mqtt('2')
+    thread1 = threading.Thread(target=publish, args=[client])
+    thread1.start()
+    client = connect_mqtt('2', broker)
     subscribe(client)
     client.loop_forever()
 

@@ -1,4 +1,4 @@
-import smbus
+#import smbus
 import requests
 from flask import Flask, url_for
 import threading
@@ -18,20 +18,20 @@ ONE_TIME_HIGH_RES_MODE_2 = 0x21
 ONE_TIME_LOW_RES_MODE = 0x23
 
 #bus = smbus.SMBus(0) # Rev 1 Pi uses 0
-bus = smbus.SMBus(1)  # Rev 2 Pi uses 1
+#bus = smbus.SMBus(1)  # Rev 2 Pi uses 1
 
-def convertToNumber(data):
-  result=(data[1] + (256 * data[0])) / 1.2
-  return (result)
-
-def readLight(addr=DEVICE):
-  # Read data from I2C interface
-  data = bus.read_i2c_block_data(addr,ONE_TIME_HIGH_RES_MODE_1)
-  return convertToNumber(data)
-
+#def convertToNumber(data):
+#  result=(data[1] + (256 * data[0])) / 1.2
+#  return (result)
+#
+#def readLight(addr=DEVICE):
+#  # Read data from I2C interface
+#  data = bus.read_i2c_block_data(addr,ONE_TIME_HIGH_RES_MODE_1)
+#  return convertToNumber(data)
+#
 
 def get_light():
-    value=readLight()
+    value=0#readLight()
     x = {"sensorID":"0", "typeSensor":"light", "typeValue":"float", "value": value}
     return x
 
@@ -71,7 +71,8 @@ controllers = [set_light(), set_pomp()]
 def publish():
     while True:
         time.sleep(5)
-        requests.post("localhost:5001", json.dumps(sensors_per))
+        requests.post("http://localhost:5001/", json.dumps(sensors_per))
+
 
 app = Flask(__name__)
 
@@ -84,4 +85,4 @@ def hello_world():
 def exec():
     publisher = threading.Thread(target=publish)
     publisher.start()
-    app.run()
+    app.run(port=5000)
