@@ -73,6 +73,5 @@ def hello_world():
 
 
 def exec():
-    publisher = threading.Thread(target=publish)
-    publisher.start()
+    run()
     app.run()
