@@ -6,8 +6,8 @@ from paho.mqtt import client as mqtt_client
 
 broker = 'broker.hivemq.com'
 port = 1883
-topic1 = "vmk/team_4"
-topic2 = "vmk/team_4/commands"
+topic1 = "vmk/team_4/r"
+topic2 = "vmk/team_4/c"
 # generate client ID with pub prefix randomly
 client_id = f'python-mqtt-0'
 worker_id = f'python-mqtt-1'
@@ -36,10 +36,10 @@ def connect_mqtt(id, broker) -> mqtt_client:
 
     client = mqtt_client.Client(id)
     if id == "0":
-        #print("CONNECTED TO ", ACCESS_TOKEN)
+        print("CONNECTED TO ", ACCESS_TOKEN)
         client.username_pw_set(ACCESS_TOKEN)
     if id == "3":
-        #print("CONNECTED TO HUMIDITY SENSOR")
+        print("CONNECTED TO HUMIDITY SENSOR")
         client.username_pw_set(ACCESS_TOKEN_HUMIDITY)
     client.on_connect = on_connect
     client.connect(broker, port)
@@ -55,8 +55,8 @@ def on_message(client, userdata, msg):
     data = literal_eval(msg.payload.decode('utf8'))
     global sensors_per
     sensors_per = data
-    #print(sensors_per)
-    #print(f"Received `{msg.payload.decode()}` from `{msg.topic}` topic")
+    print(sensors_per)
+    print(f"Received `{msg.payload.decode()}` from `{msg.topic}` topic")
 
 
 def subscribe(client: mqtt_client):
@@ -66,18 +66,18 @@ def subscribe(client: mqtt_client):
 
 def publish(client):
     while True:
-        time.sleep(5)
+        time.sleep(30)
         if len(sensors_per) == 2:
             result = client.publish(topicTelemetry, json.dumps(sensors_per[0]))
-            #print("PUBLISHING LIGHT: ", json.dumps(sensors_per[0]))
+            print("PUBLISHING LIGHT: ", json.dumps(sensors_per[0]))
 
 
 def publishHumidity(client):
     while True:
-        time.sleep(5)
+        time.sleep(30)
         if len(sensors_per) == 2:
             result = client.publish(topicTelemetry, json.dumps(sensors_per[1]))
-            #print("PUBLISHING HUMIDITY: ", json.dumps(sensors_per[1]))
+            print("PUBLISHING HUMIDITY: ", json.dumps(sensors_per[1]))
 
 
 def run():
@@ -102,3 +102,7 @@ def run():
 
 def exec():
     run()
+
+
+if __name__ == "__main__":
+    exec()
