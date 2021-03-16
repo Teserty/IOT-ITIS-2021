@@ -1,8 +1,6 @@
 import random
-import random
 import time
 import json
-
 
 from paho.mqtt import client as mqtt_client
 
@@ -20,21 +18,29 @@ brokerT = 'thingsboard.cloud'
 topicTelemetry = 'v1/devices/me/telemetry'
 topicRequest = 'v1/devices/me/rpc/request/'
 topicResponse = 'v1/devices/me/rpc/response/'
-topicRequest = "v1/devices/me/rpc/request/+"
 # generate client ID with pub prefix randomly
 # username = 'emqx'
 # password = 'public'
 ACCESS_TOKEN = 'Hj0payDBaIzqWowpoj0U'
 
+ACCESS_TOKEN_HUMIDITY = "7G4GYyktZn79RM5mvb6I"
+
+
 def connect_mqtt(id, broker) -> mqtt_client:
     def on_connect(client, userdata, flags, rc):
         if rc == 0:
             print("Connected to MQTT Broker!")
+            print(client)
         else:
             print("Failed to connect, return code %d\n", rc)
 
     client = mqtt_client.Client(id)
-    client.username_pw_set(ACCESS_TOKEN)
+    if id == "0":
+        #print("CONNECTED TO ", ACCESS_TOKEN)
+        client.username_pw_set(ACCESS_TOKEN)
+    if id == "3":
+        #print("CONNECTED TO HUMIDITY SENSOR")
+        client.username_pw_set(ACCESS_TOKEN_HUMIDITY)
     client.on_connect = on_connect
     client.connect(broker, port)
     return client
@@ -49,8 +55,8 @@ def on_message(client, userdata, msg):
     data = literal_eval(msg.payload.decode('utf8'))
     global sensors_per
     sensors_per = data
-    print(sensors_per)
-    print(f"Received `{msg.payload.decode()}` from `{msg.topic}` topic")
+    #print(sensors_per)
+    #print(f"Received `{msg.payload.decode()}` from `{msg.topic}` topic")
 
 
 def subscribe(client: mqtt_client):
@@ -60,11 +66,18 @@ def subscribe(client: mqtt_client):
 
 def publish(client):
     while True:
-        print(sensors_per)
         time.sleep(5)
-        for sensor in sensors_per:
-            result = client.publish(topicRequest, json.dumps(sensor))
+        if len(sensors_per) == 2:
+            result = client.publish(topicTelemetry, json.dumps(sensors_per[0]))
+            #print("PUBLISHING LIGHT: ", json.dumps(sensors_per[0]))
 
+
+def publishHumidity(client):
+    while True:
+        time.sleep(5)
+        if len(sensors_per) == 2:
+            result = client.publish(topicTelemetry, json.dumps(sensors_per[1]))
+            #print("PUBLISHING HUMIDITY: ", json.dumps(sensors_per[1]))
 
 
 def run():
@@ -75,6 +88,15 @@ def run():
     thread1.start()
     client = connect_mqtt('2', broker)
     subscribe(client)
+
+    clientHumidity = connect_mqtt('3', brokerT)
+    clientHumidity.loop_start()
+    thread2 = threading.Thread(target=publishHumidity, args=[clientHumidity])
+    thread2.start()
+    clientHumidity = connect_mqtt('2', broker)
+    subscribe(clientHumidity)
+
+    clientHumidity.loop_forever()
     client.loop_forever()
 
 

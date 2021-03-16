@@ -1,84 +1,67 @@
-import requests as rq
-from flask import Flask, url_for
-from markupsafe import escape
-import threading
+import requests
 import time
 import json
 from paho.mqtt import client as mqtt_client
 
 broker = 'broker.hivemq.com'
 port = 1883
-topic1 = "vmk/team_4"
-topic2 = "vmk/team_4/commands"
-# generate client ID with pub prefix randomly
-client_id = f'python-mqtt-0'
-worker_id = f'python-mqtt-1'
-# username = 'emqx'
-# password = 'public'
-
-
-def connect_mqtt(id):
-    def on_connect(client, userdata, flags, rc):
-        if rc == 0:
-            print("Connected to MQTT Broker!")
-        else:
-            print("Failed to connect, return code %d\n", rc)
-
-    client = mqtt_client.Client(id)
-    # client.username_pw_set(username, password)
-    client.on_connect = on_connect
-    client.connect(broker, port)
-    return client
-
-
+client_id = f'0'
+worker_id = f'1'
 sensors_per=[]
+subscriber = mqtt_client.Client('0')
+publisher = mqtt_client.Client('1')
 
 
-def publish(client):
+def publish():
+    val = requests.post("http://localhost:5000/")
+    global sensors_per
+    sensors_per = val
+    print(val)
+    return val.json()
+
+
+def publish_loop(client):
+    print("Publish loop")
     while True:
+        client.publish("vmk/team_4/r", json.dumps(publish()))
         time.sleep(5)
-        result = client.publish(topic1, json.dumps(sensors_per))
 
+
+def alert_loop():
+    while True:
+        val = publish()
+        if val[0].get('value') < 10:
+            publisher.publish("vmk/team_4/r", json.dumps([{"action": 'alert'}]))
+            publisher.publish("vmk/team_4/r", json.dumps(publish()))
+            time.sleep(20)
+        time.sleep(2)
 
 
 def subscribe(client):
     def on_message(client, userdata, msg):
-        print(msg.payload)
-
-    client.subscribe(topic2)
+        print(msg)
+        publisher.publish("vmk/team_4/r", json.dumps(publish()))
+    client.subscribe("vmk/team_4/c")
     client.on_message = on_message
 
 
-import threading
-
-
 def run():
-    client = connect_mqtt(worker_id)
-    subscribe(client)
-    client = connect_mqtt(client_id)
-    client.loop_start()
-    th = threading.Thread(target=publish, args=[client])
-    th.start()
-
-
-app = Flask(__name__)
-
-from flask import request, jsonify
-
-
-@app.route('/', methods=['POST'])
-def hello_world():
-    from ast import literal_eval
-    import json
-    data = literal_eval(request.data.decode('utf8'))
-    global sensors_per
-    sensors_per = data
-    #print(data)
-    #s = json.dumps(data, indent=4, sort_keys=True)
-    #print(s)
-    return "200"
+    print("Started")
+    import threading
+    subscriber.connect(broker, port)
+    publisher.connect(broker, port)
+    subscribe(subscriber)
+    thread1 = threading.Thread(target=subscriber.loop_forever)
+    thread1.start()
+    thread2 = threading.Thread(target=alert_loop)
+    thread2.start()
+    publisher.loop_start()
+    publish_loop(publisher)
 
 
 def exec():
     run()
-    app.run(port=5001)
+
+
+if __name__ == "__main__":
+    exec()
