@@ -1,4 +1,5 @@
 import random
+import threading
 import time
 import json
 
@@ -15,8 +16,9 @@ worker_id = f'python-mqtt-1'
 # password = 'public'
 
 brokerT = 'thingsboard.cloud'
+topicRequest1 = "tb/mqtt-integration-work/sensors/+/rx/twoway"
 topicTelemetry = 'v1/devices/me/telemetry'
-topicRequest = 'v1/devices/me/rpc/request/'
+topicRequest = 'v1/devices/me/rpc/request/+'
 topicResponse = 'v1/devices/me/rpc/response/'
 # generate client ID with pub prefix randomly
 # username = 'emqx'
@@ -26,25 +28,34 @@ ACCESS_TOKEN = 'Hj0payDBaIzqWowpoj0U'
 ACCESS_TOKEN_HUMIDITY = "7G4GYyktZn79RM5mvb6I"
 
 
+publisher = mqtt_client.Client('5')
+publisher.connect(broker, port)
+
+
 def connect_mqtt(id, broker) -> mqtt_client:
     def on_connect(client, userdata, flags, rc):
         if rc == 0:
-            print("Connected to MQTT Broker!")
-            print(client)
+           # print("Connected to MQTT Broker!")
+            #print(broker)
+            pass
         else:
-            print("Failed to connect, return code %d\n", rc)
+            pass
+            #print("Failed to connect, return code %d\n", rc)
 
     client = mqtt_client.Client(id)
     if id == "0":
-        print("CONNECTED TO ", ACCESS_TOKEN)
+        #print("CONNECTED TO ", ACCESS_TOKEN)
         client.username_pw_set(ACCESS_TOKEN)
     if id == "3":
-        print("CONNECTED TO HUMIDITY SENSOR")
+        #print("CONNECTED TO HUMIDITY SENSOR")
         client.username_pw_set(ACCESS_TOKEN_HUMIDITY)
     client.on_connect = on_connect
     client.connect(broker, port)
     return client
 
+
+light_publisher = connect_mqtt('0', brokerT)
+light_publisher.loop_start()
 
 sensors_per = []
 
@@ -56,35 +67,50 @@ def on_message(client, userdata, msg):
     global sensors_per
     sensors_per = data
     print(sensors_per)
-    print(f"Received `{msg.payload.decode()}` from `{msg.topic}` topic")
+    #print('Incoming message topic: ' + msg.topic)
+
+    #собственно если у нас сообщение начинается с sensor-1, мы посылаем ему сообщение (просто 10)
+    if len(data)==2:
+        light_publisher.publish(topicTelemetry, json.dumps(sensors_per[0]))
+    if msg.topic.startswith('tb/mqtt-integration-work/sensors/Sensor-1/rx/twoway'):
+        #print('This is two way call, responding now')
+        responseMsg = "{\"value\":\"200\"}"
+        #print('Sending a response message: ' + responseMsg)
+        publisher.publish("vmk/team_4/c", json.dumps(responseMsg))
+        if len(sensors_per) == 2:
+            client.publish('tb/mqtt-integration-work/sensors/Sensor-1/rx/response',  sensors_per[0])
+        #print('Sent a response message: ' + responseMsg)
+        return
+    #print(sensors_per)
+    #print(f"Received `{msg.payload.decode()}` from `{msg.topic}` topic")
 
 
 def subscribe(client: mqtt_client):
     client.subscribe(topic1)
+    #подписываемся на топик request
+    client.subscribe(topicRequest1)
     client.on_message = on_message
 
 
 def publish(client):
     while True:
-        time.sleep(30)
         if len(sensors_per) == 2:
             result = client.publish(topicTelemetry, json.dumps(sensors_per[0]))
-            print("PUBLISHING LIGHT: ", json.dumps(sensors_per[0]))
+            #print("PUBLISHING LIGHT: ", json.dumps(sensors_per[0]))
+        time.sleep(30)
 
 
 def publishHumidity(client):
     while True:
-        time.sleep(30)
         if len(sensors_per) == 2:
             result = client.publish(topicTelemetry, json.dumps(sensors_per[1]))
-            print("PUBLISHING HUMIDITY: ", json.dumps(sensors_per[1]))
+            #print("PUBLISHING HUMIDITY: ", json.dumps(sensors_per[1]))
+        time.sleep(30)
 
 
 def run():
     import threading
-    client = connect_mqtt('0', brokerT)
-    client.loop_start()
-    thread1 = threading.Thread(target=publish, args=[client])
+    thread1 = threading.Thread(target=publish, args=[light_publisher])
     thread1.start()
     client = connect_mqtt('2', broker)
     subscribe(client)
@@ -95,9 +121,12 @@ def run():
     thread2.start()
     clientHumidity = connect_mqtt('2', broker)
     subscribe(clientHumidity)
-
     clientHumidity.loop_forever()
+    #thread3 = threading.Thread(target=clientHumidity.loop_forever)
+    #thread3.start()
     client.loop_forever()
+
+
 
 
 def exec():
