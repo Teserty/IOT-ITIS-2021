@@ -77,8 +77,10 @@ def on_message(client, userdata, msg):
         responseMsg = "{\"value\":\"200\"}"
         #print('Sending a response message: ' + responseMsg)
         publisher.publish("vmk/team_4/c", json.dumps(responseMsg))
+
         if len(sensors_per) == 2:
-            client.publish('tb/mqtt-integration-work/sensors/Sensor-1/rx/response',  sensors_per[0])
+            client.publish(topicTelemetry,  sensors_per[0])
+            client.publish('v1/devices/me/rpc/response/1',sensors_per[0])
         #print('Sent a response message: ' + responseMsg)
         return
     #print(sensors_per)
@@ -89,6 +91,7 @@ def subscribe(client: mqtt_client):
     client.subscribe(topic1)
     #подписываемся на топик request
     client.subscribe(topicRequest1)
+    client.subscribe(topicRequest)
     client.on_message = on_message
 
 
